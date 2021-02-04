@@ -8,6 +8,11 @@
 
 import Foundation
 
+
+protocol WeatherManagerDelegate {
+    func didUpdateWeather(weather: WeatherModel)
+}
+
 struct WeatherManager {
     let weatherUrl =
         "https://api.openweathermap.org/data/2.5/weather?appid=b92c2490dcb6f1f0699c01375bc60d5b&units=metric"
@@ -32,9 +37,8 @@ struct WeatherManager {
                 }
                 
                 if let safeData = data {
-                    let weather = self.parseJSON(weatherData: safeData)
-                    if let safeWeather = weather {
-                        delegate?.didUpdateWeather(weather: safeWeather)
+                    if let weather = self.parseJSON(weatherData: safeData){
+                        self.delegate?.didUpdateWeather(weather: weather)
                     }
                 }
             }
@@ -63,7 +67,4 @@ struct WeatherManager {
         }
         
     }
-    
-
 }
-
