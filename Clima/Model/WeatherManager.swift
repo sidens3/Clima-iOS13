@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CoreLocation
 
 
 protocol WeatherManagerDelegate {
@@ -15,13 +16,21 @@ protocol WeatherManagerDelegate {
 }
 
 struct WeatherManager {
-    let weatherUrl =
+    let apiId = "b92c2490dcb6f1f0699c01375bc60d5b"
+    let units = "metric"
+    let weatherUrll =
         "https://api.openweathermap.org/data/2.5/weather?appid=b92c2490dcb6f1f0699c01375bc60d5b&units=metric"
-    
+    let weatherUrl = "https://api.openweathermap.org/data/2.5/weather"
     var delegate: WeatherManagerDelegate?
     
     func fetchWeather(cityName: String ) {
-        let urlString = "\(weatherUrl)&q=\(cityName)"
+        let urlString = "\(weatherUrl)?appid=\(apiId)&units=\(units)&q=\(cityName)"
+        performRequest(with: urlString)
+    }
+    
+    func fetchWeather(latitude: CLLocationDegrees, longitude: CLLocationDegrees){
+        let urlString = "https://api.openweathermap.org/data/2.5/weather?lat=\(latitude)&lon=\(longitude)&appid=\(apiId)&units=\(units)"
+        print(urlString)
         performRequest(with: urlString)
     }
     
@@ -34,6 +43,7 @@ struct WeatherManager {
             let task = session.dataTask(with: url) { (data, response, error) in
                 if error != nil {
                     self.delegate?.didFailWithError(error: error!)
+                    print("request perform error detected")
                     return
                 }
                 
@@ -52,6 +62,9 @@ struct WeatherManager {
     func parseJSON(_ weatherData: Data) -> WeatherModel?{
         let decoder = JSONDecoder()
         do {
+            print("")
+            print(String(decoding: weatherData, as: UTF8.self))
+            print("")
             let decodedData = try decoder.decode(WeatherData.self, from: weatherData)
             
             let id = decodedData.weather[0].id
@@ -59,13 +72,11 @@ struct WeatherManager {
             let name = decodedData.name
             
             let weather = WeatherModel(conditionId: id, cityName: name, temperature: temp)
-//            print(weather.conditionName)
-//            print(weather.temperatureString)
             return weather
         } catch {
             delegate?.didFailWithError(error: error)
+            print("parse error detected")
             return nil
         }
-        
     }
 }

@@ -7,23 +7,36 @@
 //
 
 import UIKit
+import CoreLocation
 
-class WeatherViewController: UIViewController, UITextFieldDelegate, WeatherManagerDelegate {
+class WeatherViewController: UIViewController {
 
+    @IBOutlet weak var GPSLocationButton: UIButton!
     @IBOutlet weak var conditionImageView: UIImageView!
     @IBOutlet weak var temperatureLabel: UILabel!
     @IBOutlet weak var cityLabel: UILabel!
     @IBOutlet weak var searchTextField: UITextField!
+    let locationManager = CLLocationManager()
     
     var weatherManager = WeatherManager()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+                
+        locationManager.delegate = self
         searchTextField.delegate = self
         weatherManager.delegate = self
-    }
+        
+        locationManager.requestWhenInUseAuthorization()
+        if CLLocationManager.locationServicesEnabled(){
+            locationManager.requestLocation()
+        }
 
+    }
+}
+
+//MARK: - UITextFieldDelegate
+extension WeatherViewController: UITextFieldDelegate{
     @IBAction func searchPressed(_ sender: UIButton) {
         searchTextField.endEditing(true)
         print(searchTextField.text!)
@@ -56,6 +69,11 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, WeatherManag
         textField.placeholder = "Search"
         searchTextField.text = ""
     }
+}
+
+//MARK: - WeatherManagerDelegate
+extension WeatherViewController: WeatherManagerDelegate{
+    
     
     func didUpdateWeather(_ weatherManager: WeatherManager, weather: WeatherModel) {
         print(weather.temperatureString)
@@ -63,6 +81,7 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, WeatherManag
         DispatchQueue.main.async {
             self.temperatureLabel.text = weather.temperatureString
             self.conditionImageView.image = UIImage(systemName: weather.conditionName)
+            self.cityLabel.text = weather.cityName
         }
        
     }
@@ -70,6 +89,31 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, WeatherManag
     func didFailWithError(error: Error) {
         print(error)
     }
+}
+
+//MARK: - CLLocationManagerDelegate
+extension WeatherViewController: CLLocationManagerDelegate{
     
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]){
+        if let location = locations.last {
+            locationManager.stopUpdatingLocation()
+            print("New location is \(location)")
+            let lat = location.coordinate.latitude
+            let lon = location.coordinate.longitude
+            weatherManager.fetchWeather(latitude: lat, longitude: lon)
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print(locationManager)
+        print(error)
+    }
+
+    @IBAction func GPSLocationPressed(_ sender: UIButton) {
+        if CLLocationManager.locationServicesEnabled(){
+            locationManager.requestLocation()
+        } 
+        
+    }    
 }
 
